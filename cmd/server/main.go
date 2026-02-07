@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,9 +19,17 @@ import (
 
 func main() {
 	// Get config from environment
+	// DATABASE_URL takes precedence; otherwise build from individual env vars
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		databaseURL = "postgres://postgres:postgres@localhost:5432/telemetry?sslmode=disable"
+		dbUser := getEnvOrDefault("POSTGRES_USER", "postgres")
+		dbPassword := getEnvOrDefault("POSTGRES_PASSWORD", "postgres")
+		dbHost := getEnvOrDefault("POSTGRES_HOST", "localhost")
+		dbPort := getEnvOrDefault("POSTGRES_PORT", "5432")
+		dbName := getEnvOrDefault("POSTGRES_DB", "telemetry")
+		dbSSLMode := getEnvOrDefault("POSTGRES_SSLMODE", "disable")
+		databaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
 	}
 
 	port := os.Getenv("PORT")
@@ -84,4 +93,11 @@ func main() {
 	}
 
 	log.Println("Server stopped")
+}
+
+func getEnvOrDefault(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
