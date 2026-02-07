@@ -122,7 +122,13 @@ GET /analytics/daily?from=2026-01-01T00:00:00Z&to=2026-02-01T00:00:00Z
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| DATABASE_URL | postgres://postgres:postgres@localhost:5432/telemetry?sslmode=disable | TimescaleDB connection string |
+| DATABASE_URL | *(built from parts below)* | TimescaleDB connection string (takes precedence if set) |
+| POSTGRES_USER | postgres | Database user |
+| POSTGRES_PASSWORD | postgres | Database password |
+| POSTGRES_HOST | localhost | Database host |
+| POSTGRES_PORT | 5432 | Database port |
+| POSTGRES_DB | telemetry | Database name |
+| POSTGRES_SSLMODE | disable | SSL mode |
 | PORT | 8080 | Server port |
 
 ## TimescaleDB Features Used
