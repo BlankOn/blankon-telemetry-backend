@@ -18,6 +18,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	// Get config from environment
 	// DATABASE_URL takes precedence; otherwise build from individual env vars
 	databaseURL := os.Getenv("DATABASE_URL")

@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,6 +46,7 @@ func (r *analyticsRepo) GetHourlyStats(ctx context.Context, eventName string, fr
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
+		log.Printf("repo.GetHourlyStats: query hourly stats: %v", err)
 		return nil, fmt.Errorf("query hourly stats: %w", err)
 	}
 	defer rows.Close()
@@ -53,6 +55,7 @@ func (r *analyticsRepo) GetHourlyStats(ctx context.Context, eventName string, fr
 	for rows.Next() {
 		var s EventStats
 		if err := rows.Scan(&s.Bucket, &s.EventName, &s.EventCount, &s.UniqueUsers); err != nil {
+			log.Printf("repo.GetHourlyStats: scan hourly stats: %v", err)
 			return nil, fmt.Errorf("scan hourly stats: %w", err)
 		}
 		stats = append(stats, s)
@@ -78,6 +81,7 @@ func (r *analyticsRepo) GetDailyStats(ctx context.Context, eventName string, fro
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
+		log.Printf("repo.GetDailyStats: query daily stats: %v", err)
 		return nil, fmt.Errorf("query daily stats: %w", err)
 	}
 	defer rows.Close()
@@ -86,6 +90,7 @@ func (r *analyticsRepo) GetDailyStats(ctx context.Context, eventName string, fro
 	for rows.Next() {
 		var s EventStats
 		if err := rows.Scan(&s.Bucket, &s.EventName, &s.EventCount, &s.UniqueUsers); err != nil {
+			log.Printf("repo.GetDailyStats: scan daily stats: %v", err)
 			return nil, fmt.Errorf("scan daily stats: %w", err)
 		}
 		stats = append(stats, s)

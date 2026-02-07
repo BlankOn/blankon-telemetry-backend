@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/herpiko/blankon-telemetry-backend/pkg/models"
 	"github.com/jackc/pgx/v5"
@@ -27,6 +28,7 @@ func NewEventRepository(db *pgxpool.Pool) EventRepository {
 func (r *eventRepo) Create(ctx context.Context, event *models.Event) error {
 	payloadJSON, err := json.Marshal(event.Payload)
 	if err != nil {
+		log.Printf("repo.Create: marshal payload: %v", err)
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
@@ -39,6 +41,7 @@ func (r *eventRepo) Create(ctx context.Context, event *models.Event) error {
 	err = r.db.QueryRow(ctx, query, event.EventName, event.Timestamp, payloadJSON).
 		Scan(&event.ID, &event.CreatedAt)
 	if err != nil {
+		log.Printf("repo.Create: insert event: %v", err)
 		return fmt.Errorf("insert event: %w", err)
 	}
 
@@ -61,10 +64,12 @@ func (r *eventRepo) GetByID(ctx context.Context, id int64) (*models.Event, error
 		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
+		log.Printf("repo.GetByID: get event %d: %v", id, err)
 		return nil, fmt.Errorf("get event: %w", err)
 	}
 
 	if err := json.Unmarshal(payloadJSON, &event.Payload); err != nil {
+		log.Printf("repo.GetByID: unmarshal payload for event %d: %v", id, err)
 		return nil, fmt.Errorf("unmarshal payload: %w", err)
 	}
 
@@ -113,6 +118,7 @@ func (r *eventRepo) List(ctx context.Context, filter models.EventFilter) ([]mode
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
+		log.Printf("repo.List: list events: %v", err)
 		return nil, fmt.Errorf("list events: %w", err)
 	}
 	defer rows.Close()
@@ -123,10 +129,12 @@ func (r *eventRepo) List(ctx context.Context, filter models.EventFilter) ([]mode
 		var payloadJSON []byte
 
 		if err := rows.Scan(&event.ID, &event.EventName, &event.Timestamp, &payloadJSON, &event.CreatedAt); err != nil {
+			log.Printf("repo.List: scan event: %v", err)
 			return nil, fmt.Errorf("scan event: %w", err)
 		}
 
 		if err := json.Unmarshal(payloadJSON, &event.Payload); err != nil {
+			log.Printf("repo.List: unmarshal payload: %v", err)
 			return nil, fmt.Errorf("unmarshal payload: %w", err)
 		}
 

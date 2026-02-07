@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,6 +49,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("CreateEvent: invalid request body: %v", err)
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
@@ -55,9 +57,11 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	event, err := h.eventUC.CreateEvent(r.Context(), req)
 	if err != nil {
 		if errors.Is(err, usecase.ErrInvalidEvent) {
+			log.Printf("CreateEvent: invalid event: %v", err)
 			h.respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		log.Printf("CreateEvent: failed to create event: %v", err)
 		h.respondError(w, http.StatusInternalServerError, "failed to create event")
 		return
 	}
@@ -69,6 +73,7 @@ func (h *Handler) GetEvent(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
+		log.Printf("GetEvent: invalid event id %q: %v", idStr, err)
 		h.respondError(w, http.StatusBadRequest, "invalid event id")
 		return
 	}
@@ -79,6 +84,7 @@ func (h *Handler) GetEvent(w http.ResponseWriter, r *http.Request) {
 			h.respondError(w, http.StatusNotFound, "event not found")
 			return
 		}
+		log.Printf("GetEvent: failed to get event %d: %v", id, err)
 		h.respondError(w, http.StatusInternalServerError, "failed to get event")
 		return
 	}
@@ -123,6 +129,7 @@ func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 
 	events, err := h.eventUC.ListEvents(r.Context(), filter)
 	if err != nil {
+		log.Printf("ListEvents: failed to list events: %v", err)
 		h.respondError(w, http.StatusInternalServerError, "failed to list events")
 		return
 	}
@@ -147,6 +154,7 @@ func (h *Handler) GetHourlyStats(w http.ResponseWriter, r *http.Request) {
 
 	stats, err := h.analyticsUC.GetHourlyStats(r.Context(), eventName, from, to)
 	if err != nil {
+		log.Printf("GetHourlyStats: failed: %v", err)
 		h.respondError(w, http.StatusInternalServerError, "failed to get hourly stats")
 		return
 	}
@@ -171,6 +179,7 @@ func (h *Handler) GetDailyStats(w http.ResponseWriter, r *http.Request) {
 
 	stats, err := h.analyticsUC.GetDailyStats(r.Context(), eventName, from, to)
 	if err != nil {
+		log.Printf("GetDailyStats: failed: %v", err)
 		h.respondError(w, http.StatusInternalServerError, "failed to get daily stats")
 		return
 	}

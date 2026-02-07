@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/herpiko/blankon-telemetry-backend/internal/repo"
@@ -44,6 +45,7 @@ func (u *eventUsecase) CreateEvent(ctx context.Context, req models.CreateEventRe
 	}
 
 	if err := u.repo.Create(ctx, event); err != nil {
+		log.Printf("usecase.CreateEvent: repo.Create failed: %v", err)
 		return nil, err
 	}
 
@@ -53,6 +55,7 @@ func (u *eventUsecase) CreateEvent(ctx context.Context, req models.CreateEventRe
 func (u *eventUsecase) GetEvent(ctx context.Context, id int64) (*models.Event, error) {
 	event, err := u.repo.GetByID(ctx, id)
 	if err != nil {
+		log.Printf("usecase.GetEvent: repo.GetByID(%d) failed: %v", id, err)
 		return nil, err
 	}
 
@@ -72,5 +75,10 @@ func (u *eventUsecase) ListEvents(ctx context.Context, filter models.EventFilter
 		filter.Limit = 1000
 	}
 
-	return u.repo.List(ctx, filter)
+	events, err := u.repo.List(ctx, filter)
+	if err != nil {
+		log.Printf("usecase.ListEvents: repo.List failed: %v", err)
+		return nil, err
+	}
+	return events, nil
 }

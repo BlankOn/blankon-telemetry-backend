@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/herpiko/blankon-telemetry-backend/internal/repo"
@@ -29,7 +30,12 @@ func (u *analyticsUsecase) GetHourlyStats(ctx context.Context, eventName string,
 		to = time.Now().UTC()
 	}
 
-	return u.repo.GetHourlyStats(ctx, eventName, from, to)
+	stats, err := u.repo.GetHourlyStats(ctx, eventName, from, to)
+	if err != nil {
+		log.Printf("usecase.GetHourlyStats: repo.GetHourlyStats failed: %v", err)
+		return nil, err
+	}
+	return stats, nil
 }
 
 func (u *analyticsUsecase) GetDailyStats(ctx context.Context, eventName string, from, to time.Time) ([]repo.EventStats, error) {
@@ -41,5 +47,10 @@ func (u *analyticsUsecase) GetDailyStats(ctx context.Context, eventName string, 
 		to = time.Now().UTC()
 	}
 
-	return u.repo.GetDailyStats(ctx, eventName, from, to)
+	stats, err := u.repo.GetDailyStats(ctx, eventName, from, to)
+	if err != nil {
+		log.Printf("usecase.GetDailyStats: repo.GetDailyStats failed: %v", err)
+		return nil, err
+	}
+	return stats, nil
 }
