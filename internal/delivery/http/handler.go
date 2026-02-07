@@ -1,0 +1,127 @@
+package http
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/herpiko/blankon-telemetry-backend/internal/usecase"
+	"github.com/herpiko/blankon-telemetry-backend/pkg/models"
+)
+
+type Handler struct {
+	eventUC usecase.EventUsecase
+}
+
+func NewHandler(eventUC usecase.EventUsecase) *Handler {
+	return &Handler{eventUC: eventUC}
+}
+
+type response struct {
+	Data  interface{} `json:"data,omitempty"`
+	Error string      `json:"error,omitempty"`
+}
+
+func (h *Handler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(response{Data: data})
+}
+
+func (h *Handler) respondError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(response{Error: message})
+}
+
+func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+	h.respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateEventRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	event, err := h.eventUC.CreateEvent(r.Context(), req)
+	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidEvent) {
+			h.respondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		h.respondError(w, http.StatusInternalServerError, "failed to create event")
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, event)
+}
+
+func (h *Handler) GetEvent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid event id")
+		return
+	}
+
+	event, err := h.eventUC.GetEvent(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, usecase.ErrEventNotFound) {
+			h.respondError(w, http.StatusNotFound, "event not found")
+			return
+		}
+		h.respondError(w, http.StatusInternalServerError, "failed to get event")
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, event)
+}
+
+func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
+	filter := models.EventFilter{}
+
+	if name := r.URL.Query().Get("event_name"); name != "" {
+		filter.EventName = name
+	}
+
+	if fromStr := r.URL.Query().Get("from"); fromStr != "" {
+		from, err := time.Parse(time.RFC3339, fromStr)
+		if err == nil {
+			filter.From = &from
+		}
+	}
+
+	if toStr := r.URL.Query().Get("to"); toStr != "" {
+		to, err := time.Parse(time.RFC3339, toStr)
+		if err == nil {
+			filter.To = &to
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err == nil && limit > 0 {
+			filter.Limit = limit
+		}
+	}
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		offset, err := strconv.Atoi(offsetStr)
+		if err == nil && offset >= 0 {
+			filter.Offset = offset
+		}
+	}
+
+	events, err := h.eventUC.ListEvents(r.Context(), filter)
+	if err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to list events")
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, events)
+}
