@@ -32,6 +32,8 @@ func main() {
 			dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
 	}
 
+	log.Printf("Database URL: %s", databaseURL)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
