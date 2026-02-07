@@ -23,5 +23,10 @@ func NewRouter(h *Handler) *chi.Mux {
 		r.Get("/{id}", h.GetEvent)
 	})
 
+	r.Route("/analytics", func(r chi.Router) {
+		r.Get("/hourly", h.GetHourlyStats)
+		r.Get("/daily", h.GetDailyStats)
+	})
+
 	return r
 }

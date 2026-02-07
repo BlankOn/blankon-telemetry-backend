@@ -40,12 +40,16 @@ func main() {
 	if err := pool.Ping(ctx); err != nil {
 		log.Fatalf("Unable to ping database: %v", err)
 	}
-	log.Println("Connected to database")
+	log.Println("Connected to TimescaleDB")
 
 	// Initialize layers
 	eventRepo := repo.NewEventRepository(pool)
+	analyticsRepo := repo.NewAnalyticsRepository(pool)
+	
 	eventUC := usecase.NewEventUsecase(eventRepo)
-	handler := delivery.NewHandler(eventUC)
+	analyticsUC := usecase.NewAnalyticsUsecase(analyticsRepo)
+	
+	handler := delivery.NewHandler(eventUC, analyticsUC)
 	router := delivery.NewRouter(handler)
 
 	// Create server

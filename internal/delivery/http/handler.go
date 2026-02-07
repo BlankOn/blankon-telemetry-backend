@@ -13,11 +13,15 @@ import (
 )
 
 type Handler struct {
-	eventUC usecase.EventUsecase
+	eventUC     usecase.EventUsecase
+	analyticsUC usecase.AnalyticsUsecase
 }
 
-func NewHandler(eventUC usecase.EventUsecase) *Handler {
-	return &Handler{eventUC: eventUC}
+func NewHandler(eventUC usecase.EventUsecase, analyticsUC usecase.AnalyticsUsecase) *Handler {
+	return &Handler{
+		eventUC:     eventUC,
+		analyticsUC: analyticsUC,
+	}
 }
 
 type response struct {
@@ -124,4 +128,52 @@ func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.respondJSON(w, http.StatusOK, events)
+}
+
+func (h *Handler) GetHourlyStats(w http.ResponseWriter, r *http.Request) {
+	eventName := r.URL.Query().Get("event_name")
+
+	var from, to time.Time
+	if fromStr := r.URL.Query().Get("from"); fromStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
+			from = parsed
+		}
+	}
+	if toStr := r.URL.Query().Get("to"); toStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
+			to = parsed
+		}
+	}
+
+	stats, err := h.analyticsUC.GetHourlyStats(r.Context(), eventName, from, to)
+	if err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to get hourly stats")
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, stats)
+}
+
+func (h *Handler) GetDailyStats(w http.ResponseWriter, r *http.Request) {
+	eventName := r.URL.Query().Get("event_name")
+
+	var from, to time.Time
+	if fromStr := r.URL.Query().Get("from"); fromStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
+			from = parsed
+		}
+	}
+	if toStr := r.URL.Query().Get("to"); toStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
+			to = parsed
+		}
+	}
+
+	stats, err := h.analyticsUC.GetDailyStats(r.Context(), eventName, from, to)
+	if err != nil {
+		h.respondError(w, http.StatusInternalServerError, "failed to get daily stats")
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, stats)
 }

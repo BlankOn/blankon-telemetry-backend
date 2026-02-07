@@ -47,7 +47,7 @@ func (m *MockEventUsecase) ListEvents(ctx context.Context, filter models.EventFi
 
 func TestHealth(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
@@ -64,7 +64,7 @@ func TestHealth(t *testing.T) {
 
 func TestCreateEvent_Success(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	now := time.Now()
 	reqBody := models.CreateEventRequest{
@@ -96,7 +96,7 @@ func TestCreateEvent_Success(t *testing.T) {
 
 func TestCreateEvent_InvalidJSON(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/events", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
@@ -109,7 +109,7 @@ func TestCreateEvent_InvalidJSON(t *testing.T) {
 
 func TestCreateEvent_InvalidEvent(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	reqBody := models.CreateEventRequest{
 		EventName: "", // Invalid - empty name
@@ -130,7 +130,7 @@ func TestCreateEvent_InvalidEvent(t *testing.T) {
 
 func TestGetEvent_Success(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	expectedEvent := &models.Event{
 		ID:        1,
@@ -155,7 +155,7 @@ func TestGetEvent_Success(t *testing.T) {
 
 func TestGetEvent_InvalidID(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/events/abc", nil)
 	rec := httptest.NewRecorder()
@@ -171,7 +171,7 @@ func TestGetEvent_InvalidID(t *testing.T) {
 
 func TestGetEvent_NotFound(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	mockUC.On("GetEvent", mock.Anything, int64(999)).Return(nil, usecase.ErrEventNotFound)
 
@@ -190,7 +190,7 @@ func TestGetEvent_NotFound(t *testing.T) {
 
 func TestListEvents_Success(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	expectedEvents := []models.Event{
 		{ID: 1, EventName: "event1"},
@@ -210,7 +210,7 @@ func TestListEvents_Success(t *testing.T) {
 
 func TestListEvents_WithFilters(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	expectedEvents := []models.Event{
 		{ID: 1, EventName: "app_launch"},
@@ -229,7 +229,7 @@ func TestListEvents_WithFilters(t *testing.T) {
 
 func TestListEvents_WithTimeFilters(t *testing.T) {
 	mockUC := new(MockEventUsecase)
-	h := NewHandler(mockUC)
+	h := NewHandler(mockUC, nil)
 
 	expectedEvents := []models.Event{}
 

@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: telemetry-postgres
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: telemetry-timescaledb
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - timescaledb_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -23,13 +23,13 @@ services:
     build: .
     container_name: telemetry-backend
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/telemetry?sslmode=disable
+      DATABASE_URL: postgres://postgres:postgres@timescaledb:5432/telemetry?sslmode=disable
       PORT: "8080"
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      timescaledb:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  timescaledb_data:
