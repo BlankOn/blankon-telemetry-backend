@@ -53,7 +53,7 @@ func main() {
 	if err := pool.Ping(ctx); err != nil {
 		log.Fatalf("Unable to ping database: %v", err)
 	}
-	log.Println("Connected to TimescaleDB")
+	log.Printf("Connected to TimescaleDB, server will listen on port %s", port)
 
 	// Initialize layers
 	eventRepo := repo.NewEventRepository(pool)
